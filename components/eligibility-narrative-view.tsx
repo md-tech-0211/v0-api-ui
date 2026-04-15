@@ -5,6 +5,7 @@ import { AlertCircle, CheckCircle2, ChevronDown, HelpCircle, XCircle } from "luc
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { gapSuggestions } from "@/lib/gap-suggestions"
 import { ScoreDisplay } from "@/components/protocol-card"
 import type { ParsedEligibility, ParsedProtocolFromAnalysis } from "@/lib/parse-eligibility-analysis"
 
@@ -59,48 +60,12 @@ function EligibilityBadge({ eligibility }: { eligibility: ParsedEligibility }) {
   )
 }
 
-function gapSuggestions(reason: string): string[] {
-  const r = reason.toLowerCase()
-
-  // Heuristics: convert "not documented/confirmed" into actionable data collection prompts.
-  if (r.includes("not documented") || r.includes("not confirmed") || r.includes("no confirmed")) {
-    const cleaned = reason.replace(/\s+not documented\s*$/i, "").trim()
-    return [
-      `Capture/attach documentation for: ${cleaned || reason}`,
-      "Confirm this item via chart review or clinician note, then re-run eligibility.",
-    ]
-  }
-
-  if (r.includes("score") && (r.includes("not documented") || r.includes("not provided"))) {
-    return [
-      "Administer the named scale and record the total score.",
-      "Add the scored result to the intake record, then re-run eligibility.",
-    ]
-  }
-
-  if (r.includes("status not documented") || r.includes("status unknown")) {
-    return [
-      "Ask screening questions to determine status and record the outcome.",
-      "If positive, document timing/severity; if negative, document explicit denial.",
-    ]
-  }
-
-  return [
-    "Collect the missing information implied by this gap and document it.",
-    "Re-run eligibility after updating the record.",
-  ]
-}
-
 function NarrativeProtocolCard({ row, index }: { row: EligibilityNarrativeRow; index: number }) {
   const [open, setOpen] = useState(false)
   const [gapOpen, setGapOpen] = useState(false)
   const score01 = row.scorePercent / 100
   const hasMatched = row.eligibleReasons.length > 0
   const hasFailed = row.ineligibleReasons.length > 0
-
-  const showEligibleReasons = row.eligibility === "eligible"
-  const showIneligibleReasons = row.eligibility === "ineligible"
-  const showBoth = !(showEligibleReasons || showIneligibleReasons)
 
   return (
     <div
@@ -159,7 +124,7 @@ function NarrativeProtocolCard({ row, index }: { row: EligibilityNarrativeRow; i
             <div className="space-y-4 px-3 pb-3 pt-2">
               <p className="text-sm leading-relaxed text-muted-foreground">{eligibilitySummary(row.eligibility)}</p>
 
-              {(showEligibleReasons || showBoth) ? (
+              {row.eligibility === "eligible" ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-success">
                     <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -183,7 +148,7 @@ function NarrativeProtocolCard({ row, index }: { row: EligibilityNarrativeRow; i
                 </div>
               ) : null}
 
-              {(showIneligibleReasons || showBoth) ? (
+              {row.eligibility === "ineligible" ? (
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-destructive">
                     <AlertCircle className="h-4 w-4 shrink-0" />
@@ -207,7 +172,53 @@ function NarrativeProtocolCard({ row, index }: { row: EligibilityNarrativeRow; i
                 </div>
               ) : null}
 
-              {row.eligibility === "ineligible" && hasFailed ? (
+              {row.eligibility === "needs_review" || row.eligibility === "unknown" ? (
+                <div className="space-y-4">
+                  {hasMatched ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-success">
+                        <CheckCircle2 className="h-4 w-4 shrink-0" />
+                        <span className="text-xs font-semibold uppercase tracking-wide">Reasons eligible</span>
+                        <span className="text-xs text-muted-foreground">({row.eligibleReasons.length})</span>
+                      </div>
+                      <ul className="space-y-1.5">
+                        {row.eligibleReasons.map((line, i) => (
+                          <li
+                            key={i}
+                            className="rounded-md border border-success/20 bg-success/5 px-2.5 py-1.5 text-xs text-muted-foreground"
+                          >
+                            {line}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {hasFailed ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-destructive">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span className="text-xs font-semibold uppercase tracking-wide">Reasons ineligible</span>
+                        <span className="text-xs text-muted-foreground">({row.ineligibleReasons.length})</span>
+                      </div>
+                      <ul className="space-y-1.5">
+                        {row.ineligibleReasons.map((line, i) => (
+                          <li
+                            key={i}
+                            className="rounded-md border border-destructive/20 bg-destructive/5 px-2.5 py-1.5 text-xs text-muted-foreground"
+                          >
+                            {line}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {!hasMatched && !hasFailed ? (
+                    <p className="text-xs italic text-muted-foreground">No eligibility items parsed for this protocol.</p>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {row.eligibility === "ineligible" ? (
                 <Collapsible open={gapOpen} onOpenChange={setGapOpen}>
                   <CollapsibleTrigger asChild>
                     <Button
@@ -226,23 +237,38 @@ function NarrativeProtocolCard({ row, index }: { row: EligibilityNarrativeRow; i
                   </CollapsibleTrigger>
                   <CollapsibleContent className="overflow-hidden">
                     <div className="mt-3 space-y-2 rounded-lg border border-border/50 bg-muted/15 p-3">
+                      <p className="text-xs font-medium text-foreground">How to improve</p>
                       <p className="text-xs text-muted-foreground">
-                        Practical next steps to close documentation gaps and improve the record for re-screening.
+                        For each ineligibility item above, suggested steps to close gaps and improve the record for
+                        re-screening.
                       </p>
-                      <ul className="space-y-2">
-                        {row.ineligibleReasons.map((reason, idx) => (
-                          <li key={idx} className="rounded-md border border-border/50 bg-card/40 p-2.5">
-                            <p className="text-xs font-medium text-foreground">{reason}</p>
-                            <ul className="mt-2 list-disc space-y-1 pl-5">
-                              {gapSuggestions(reason).map((s, j) => (
-                                <li key={j} className="text-xs text-muted-foreground">
-                                  {s}
-                                </li>
-                              ))}
-                            </ul>
-                          </li>
-                        ))}
-                      </ul>
+                      {hasFailed ? (
+                        <ul className="space-y-3 pt-1">
+                          {row.ineligibleReasons.map((reason, idx) => (
+                            <li key={idx} className="rounded-md border border-border/50 bg-card/40 p-2.5 space-y-2">
+                              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                Ineligible item
+                              </p>
+                              <p className="text-xs text-foreground leading-relaxed">{reason}</p>
+                              <ul className="list-disc space-y-1 pl-5">
+                                {gapSuggestions(reason).map((s, j) => (
+                                  <li key={j} className="text-xs text-muted-foreground leading-relaxed">
+                                    {s}
+                                  </li>
+                                ))}
+                              </ul>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs italic text-muted-foreground">No items to analyze.</p>
+                      )}
+                      {hasFailed ? (
+                        <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                          If gaps are due to missing documentation, gather the required records or assessments and
+                          re-run screening.
+                        </p>
+                      ) : null}
                     </div>
                   </CollapsibleContent>
                 </Collapsible>

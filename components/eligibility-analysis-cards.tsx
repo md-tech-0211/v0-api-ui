@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react"
 import { ChevronDown, ChevronUp, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { gapSuggestions } from "@/lib/gap-suggestions"
 import {
   attachLambdaScores,
   parseEligibilityAnalysisText,
@@ -36,25 +37,13 @@ function eligibilityLabel(e: ParsedEligibility): string {
   }
 }
 
-function gapSuggestions(ineligibleReasons: string[]): string[] {
-  const out: string[] = []
-  for (const r of ineligibleReasons) {
-    const t = r.trim()
-    if (t) out.push(`Work toward resolving: ${t}`)
-  }
-  if (out.length === 0) return []
-  out.push("If gaps are due to missing documentation, gather the required records or assessments and re-run screening.")
-  return out
-}
-
 function ProtocolRow({ row, index }: { row: Row; index: number }) {
   const [open, setOpen] = useState(false)
   const [gapOpen, setGapOpen] = useState(false)
 
   const pct = row.scorePercent
-  const isEligible = row.eligibility === "eligible"
-  const primaryReasons = isEligible ? row.eligibleReasons : row.ineligibleReasons
-  const gaps = !isEligible ? gapSuggestions(row.ineligibleReasons) : []
+  const elig = row.eligibility
+  const ineligibleItemsForGap = row.ineligibleReasons.map((r) => r.trim()).filter(Boolean)
 
   return (
     <div
@@ -110,56 +99,135 @@ function ProtocolRow({ row, index }: { row: Row; index: number }) {
 
       {open && (
         <div className="border-t border-border/50 px-4 pb-4 pt-2 space-y-3">
-          <div>
-            <p className="text-xs font-medium text-foreground mb-2">
-              {isEligible ? "Eligibility criteria" : "Ineligibility criteria"}
-            </p>
-            {primaryReasons.length > 0 ? (
-              <ul className="space-y-1.5">
-                {primaryReasons.map((line, i) => (
-                  <li
-                    key={i}
-                    className={cn(
-                      "text-xs rounded-lg px-2.5 py-1.5 border leading-relaxed",
-                      isEligible
-                        ? "bg-success/5 border-success/20 text-muted-foreground"
-                        : "bg-destructive/5 border-destructive/20 text-muted-foreground"
-                    )}
-                  >
-                    {line}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-muted-foreground">No items listed.</p>
-            )}
-          </div>
+          {elig === "eligible" && (
+            <div>
+              <p className="text-xs font-medium text-foreground mb-2">Eligibility criteria</p>
+              {row.eligibleReasons.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {row.eligibleReasons.map((line, i) => (
+                    <li
+                      key={i}
+                      className="text-xs rounded-lg px-2.5 py-1.5 border leading-relaxed bg-success/5 border-success/20 text-muted-foreground"
+                    >
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-muted-foreground">No items listed.</p>
+              )}
+            </div>
+          )}
 
-          {!isEligible && gaps.length > 0 && (
-            <div className="space-y-2">
-              <button
-                type="button"
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-lg border border-border/50 bg-card/70 px-3 py-2",
-                  "text-xs font-medium hover:bg-card transition-colors"
-                )}
-                onClick={() => setGapOpen((v) => !v)}
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                {gapOpen ? "Hide gap analysis" : "Gap analysis"}
-              </button>
-              {gapOpen && (
-                <div className="rounded-lg border border-border/50 bg-muted/15 p-3">
-                  <p className="text-xs font-medium text-foreground mb-2">Paths to improve eligibility</p>
-                  <ul className="space-y-1">
-                    {gaps.map((g, i) => (
-                      <li key={i} className="text-xs text-muted-foreground leading-relaxed">
-                        — {g}
+          {(elig === "needs_review" || elig === "unknown") && (
+            <div className="space-y-4">
+              {row.eligibleReasons.length > 0 ? (
+                <div>
+                  <p className="text-xs font-medium text-foreground mb-2">Reasons eligible</p>
+                  <ul className="space-y-1.5">
+                    {row.eligibleReasons.map((line, i) => (
+                      <li
+                        key={i}
+                        className="text-xs rounded-lg px-2.5 py-1.5 border leading-relaxed bg-success/5 border-success/20 text-muted-foreground"
+                      >
+                        {line}
                       </li>
                     ))}
                   </ul>
                 </div>
-              )}
+              ) : null}
+              {row.ineligibleReasons.length > 0 ? (
+                <div>
+                  <p className="text-xs font-medium text-foreground mb-2">Reasons ineligible</p>
+                  <ul className="space-y-1.5">
+                    {row.ineligibleReasons.map((line, i) => (
+                      <li
+                        key={i}
+                        className="text-xs rounded-lg px-2.5 py-1.5 border leading-relaxed bg-destructive/5 border-destructive/20 text-muted-foreground"
+                      >
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {row.eligibleReasons.length === 0 && row.ineligibleReasons.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No items listed.</p>
+              ) : null}
+            </div>
+          )}
+
+          {elig === "ineligible" && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-xs font-medium text-foreground mb-2">Ineligibility criteria</p>
+                {row.ineligibleReasons.length > 0 ? (
+                  <ul className="space-y-1.5">
+                    {row.ineligibleReasons.map((line, i) => (
+                      <li
+                        key={i}
+                        className="text-xs rounded-lg px-2.5 py-1.5 border leading-relaxed bg-destructive/5 border-destructive/20 text-muted-foreground"
+                      >
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No items listed.</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  className={cn(
+                    "flex w-full items-center justify-between gap-2 rounded-lg border border-border/50 bg-card/70 px-3 py-2.5",
+                    "text-xs font-medium hover:bg-card transition-colors"
+                  )}
+                  onClick={() => setGapOpen((v) => !v)}
+                  aria-expanded={gapOpen}
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                    Gap analysis
+                  </span>
+                  {gapOpen ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+                </button>
+                {gapOpen && (
+                  <div className="rounded-lg border border-border/50 bg-muted/15 p-3 space-y-2">
+                    <p className="text-xs font-medium text-foreground">How to improve</p>
+                    <p className="text-xs text-muted-foreground">
+                      For each ineligibility item above, suggested steps to strengthen the record and re-screen.
+                    </p>
+                    {ineligibleItemsForGap.length > 0 ? (
+                      <ul className="space-y-3 pt-1">
+                        {ineligibleItemsForGap.map((reason, idx) => (
+                          <li key={idx} className="rounded-md border border-border/50 bg-card/40 p-2.5 space-y-2">
+                            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                              Ineligible item
+                            </p>
+                            <p className="text-xs text-foreground leading-relaxed">{reason}</p>
+                            <ul className="list-disc space-y-1 pl-5">
+                              {gapSuggestions(reason).map((s, j) => (
+                                <li key={j} className="text-xs text-muted-foreground leading-relaxed">
+                                  {s}
+                                </li>
+                              ))}
+                            </ul>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">No ineligibility items to derive improvements from.</p>
+                    )}
+                    {ineligibleItemsForGap.length > 0 ? (
+                      <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                        If gaps are due to missing documentation, gather the required records or assessments and
+                        re-run screening.
+                      </p>
+                    ) : null}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

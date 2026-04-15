@@ -4,6 +4,8 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { ChevronDown, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Button } from "@/components/ui/button"
+import { gapSuggestions } from "@/lib/gap-suggestions"
 
 interface Protocol {
   protocol_id: string
@@ -66,13 +68,14 @@ export function ScoreDisplay({ score }: { score: number }) {
 
 export function ProtocolCard({ protocol, index }: ProtocolCardProps) {
   const [open, setOpen] = useState(false)
+  const [gapOpen, setGapOpen] = useState(false)
 
   const hasMatched = protocol.matched_criteria.length > 0
   const hasFailed = protocol.failed_criteria.length > 0
 
   const summaryText = protocol.eligible
     ? "This protocol’s criteria are satisfied for this subject. Open for matched criteria and scoring context."
-    : "This protocol’s criteria are not satisfied for this subject. Open to see which requirements failed."
+    : "This protocol’s criteria are not satisfied for this subject. Open for failed criteria; use Gap analysis for ways to improve the record."
 
   const showMatched = protocol.eligible
   const showFailed = !protocol.eligible
@@ -101,7 +104,13 @@ export function ProtocolCard({ protocol, index }: ProtocolCardProps) {
         <ScoreDisplay score={protocol.score} />
       </div>
 
-      <Collapsible open={open} onOpenChange={setOpen}>
+      <Collapsible
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next)
+          if (!next) setGapOpen(false)
+        }}
+      >
         <div className="border-t border-border/50 px-2 pb-2 pt-0">
           <CollapsibleTrigger
             className={cn(
@@ -177,6 +186,62 @@ export function ProtocolCard({ protocol, index }: ProtocolCardProps) {
                     <p className="text-xs italic text-muted-foreground">None listed.</p>
                   )}
                 </div>
+              ) : null}
+
+              {!protocol.eligible ? (
+                <Collapsible open={gapOpen} onOpenChange={setGapOpen}>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full justify-between gap-2 rounded-lg border-border/60 font-medium"
+                    >
+                      <span className="text-sm">Gap analysis</span>
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                          gapOpen && "rotate-180"
+                        )}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="overflow-hidden">
+                    <div className="mt-3 space-y-2 rounded-lg border border-border/50 bg-muted/15 p-3">
+                      <p className="text-xs font-medium text-foreground">How to improve</p>
+                      <p className="text-xs text-muted-foreground">
+                        For each failed criterion above, suggested steps to close gaps and improve the record for
+                        re-screening.
+                      </p>
+                      {hasFailed ? (
+                        <ul className="space-y-3 pt-1">
+                          {protocol.failed_criteria.map((criterion, idx) => (
+                            <li key={idx} className="rounded-md border border-border/50 bg-card/40 p-2.5 space-y-2">
+                              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                Failed criterion
+                              </p>
+                              <p className="text-xs font-mono text-foreground leading-relaxed">{criterion}</p>
+                              <ul className="list-disc space-y-1 pl-5">
+                                {gapSuggestions(criterion).map((s, j) => (
+                                  <li key={j} className="text-xs text-muted-foreground leading-relaxed">
+                                    {s}
+                                  </li>
+                                ))}
+                              </ul>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-xs italic text-muted-foreground">No failed criteria to analyze.</p>
+                      )}
+                      {hasFailed ? (
+                        <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                          If gaps are due to missing documentation, gather the required records or assessments and
+                          re-run screening.
+                        </p>
+                      ) : null}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               ) : null}
             </div>
           </CollapsibleContent>
