@@ -14,9 +14,10 @@ export type ParsedEligibilityAnalysis = {
 
 function normalizeEligibility(raw: string): ParsedEligibility {
   const t = raw.toLowerCase()
-  if (t.includes("ineligible")) return "ineligible"
   if (t.includes("needs review")) return "needs_review"
-  if (t.includes("eligible")) return "eligible"
+  if (/\bineligible\b/.test(t)) return "ineligible"
+  if (/\bnot\s+eligible\b/.test(t)) return "ineligible"
+  if (/\beligible\b/.test(t)) return "eligible"
   return "unknown"
 }
 
