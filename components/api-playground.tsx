@@ -9,7 +9,9 @@ import { JsonViewer } from "@/components/json-viewer"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { ProtocolList } from "@/components/protocol-list"
 import { EligibilityNarrativeView } from "@/components/eligibility-narrative-view"
+import { StructuredEligibilityDashboard } from "@/components/structured-eligibility-dashboard"
 import { attachLambdaScores, parseEligibilityAnalysisText } from "@/lib/parse-eligibility-analysis"
+import { extractBedrockStructuredEnvelope } from "@/lib/structured-eligibility"
 import { cn } from "@/lib/utils"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -907,6 +909,18 @@ export function ApiPlayground({ defaultEndpoint = "" }: ApiPlaygroundProps) {
     }
   }, [activeResponse])
 
+  const structuredEnvelope = useMemo(
+    () => (activeResponse?.data ? extractBedrockStructuredEnvelope(activeResponse.data) : null),
+    [activeResponse]
+  )
+
+  const analyzePatientLabel = useMemo(() => {
+    const data = activeResponse?.data
+    if (!data || typeof data !== "object") return undefined
+    const p = (data as Record<string, unknown>).patient
+    return typeof p === "string" && p.trim() ? p : undefined
+  }, [activeResponse])
+
   const copyToClipboard = useCallback(async () => {
     if (!activeResponse) return
     try {
@@ -1254,12 +1268,21 @@ export function ApiPlayground({ defaultEndpoint = "" }: ApiPlaygroundProps) {
               <div
                 className={cn(
                   "rounded-xl border border-border/50 overflow-auto",
-                  isProtocolResponse(activeResponse.data) || narrativeFromAnalysis
-                    ? "bg-transparent p-0 max-h-[600px]"
+                  isProtocolResponse(activeResponse.data) ||
+                    narrativeFromAnalysis ||
+                    structuredEnvelope
+                    ? "bg-transparent p-0 max-h-[min(720px,80vh)]"
                     : "bg-input/50 p-4 max-h-[400px]"
                 )}
               >
-                {narrativeFromAnalysis ? (
+                {structuredEnvelope ? (
+                  <div className="p-2 sm:p-3">
+                    <StructuredEligibilityDashboard
+                      envelope={structuredEnvelope}
+                      patientLabel={analyzePatientLabel}
+                    />
+                  </div>
+                ) : narrativeFromAnalysis ? (
                   <div className="p-1 sm:p-2">
                     <EligibilityNarrativeView patient={narrativeFromAnalysis.patient} rows={narrativeFromAnalysis.rows} />
                   </div>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-runtime"
+import { shouldSkipSecondaryBedrock } from "@/lib/structured-eligibility"
 
 export const runtime = "nodejs"
 
@@ -121,6 +122,11 @@ export async function POST(req: NextRequest) {
         },
         { status: 502 }
       )
+    }
+
+    // Bedrock eligibility Lambda may return fully structured JSON; skip the secondary explanation pass.
+    if (shouldSkipSecondaryBedrock(lambdaOutput)) {
+      return NextResponse.json({ text: "", lambdaOutput })
     }
 
     // 2) Send Lambda JSON output to Bedrock to get a human-friendly explanation.
