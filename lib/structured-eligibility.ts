@@ -1,4 +1,4 @@
-export type Validity = "eligible" | "ineligible" | "conditionally_eligible" | "insufficient_data"
+export type Validity = "eligible" | "ineligible" | "conditionally_eligible"
 
 export type PolicyAssessment = {
   policy_name: string
@@ -76,11 +76,12 @@ export function shouldSkipSecondaryBedrock(lambdaOutput: unknown): boolean {
   return false
 }
 
+/** Maps API values to three UI buckets; insufficient data is folded into conditional. */
 export function normalizeValidity(raw: string): Validity {
   const v = raw.trim().toLowerCase().replace(/\s+/g, "_")
   if (v === "eligible") return "eligible"
   if (v === "ineligible") return "ineligible"
   if (v === "conditionally_eligible") return "conditionally_eligible"
-  if (v === "insufficient_data") return "insufficient_data"
-  return "insufficient_data"
+  if (v === "insufficient_data") return "conditionally_eligible"
+  return "ineligible"
 }

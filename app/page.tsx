@@ -4,7 +4,7 @@ export default function Page() {
   const defaultEndpoint = process.env.DEFAULT_API_ENDPOINT || ""
   
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center py-8 px-4">
+    <main className="min-h-screen w-full bg-background flex items-center justify-center py-8 px-4">
       {/* Background gradient decoration */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
