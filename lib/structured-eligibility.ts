@@ -1,3 +1,5 @@
+import { parseJsonTolerant } from "@/lib/parse-tolerant-json"
+
 export type Validity = "eligible" | "ineligible" | "conditionally_eligible"
 
 export type PolicyAssessment = {
@@ -34,11 +36,9 @@ function parseJsonIfString(x: unknown): unknown {
   if (typeof x !== "string") return x
   const t = x.trim()
   if (!t) return x
-  try {
-    return JSON.parse(t)
-  } catch {
-    return x
-  }
+  const parsed = parseJsonTolerant(t)
+  if (parsed.ok) return parsed.value
+  return x
 }
 
 function isStructuredEligibility(x: unknown): x is StructuredEligibility {
