@@ -24,6 +24,7 @@ import {
 } from "@/lib/structured-eligibility"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Separator } from "@/components/ui/separator"
 
 const VALIDITY_LABEL: Record<Validity, string> = {
@@ -134,6 +135,108 @@ function KpiTile({
   )
 }
 
+function PolicyCard({ policy }: { policy: PolicyAssessment }) {
+  const [narrativeOpen, setNarrativeOpen] = useState(false)
+  const v = normalizeValidity(policy.validity)
+  const vs = validityStyles(v)
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border border-border/45 bg-background/40 p-4 ring-1 backdrop-blur-sm",
+        vs.ring
+      )}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <p className="text-sm font-semibold leading-snug text-foreground">{policy.policy_name}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <DomainPill domain={policy.domain} />
+            <ValidityBadge validity={v} />
+            {policy.hard_lifetime_exclusion ? (
+              <Badge
+                variant="outline"
+                className="border-rose-500/50 text-[10px] uppercase tracking-wide text-rose-200"
+              >
+                Lifetime exclusion
+              </Badge>
+            ) : null}
+            {policy.needs_crc_clarification ? (
+              <span className="inline-flex items-center gap-1 rounded border border-amber-500/35 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-100">
+                <HelpCircle className="h-3 w-3" />
+                CRC follow-up
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <Collapsible open={narrativeOpen} onOpenChange={setNarrativeOpen}>
+        <div className="mt-3 border-t border-border/40 pt-2">
+          <CollapsibleTrigger
+            className={cn(
+              "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left",
+              "bg-muted/25 hover:bg-muted/45 transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+            )}
+          >
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="text-xs font-medium text-foreground">Narrative assessment</span>
+              <span className="line-clamp-2 text-xs text-muted-foreground">{policy.screening_decision}</span>
+            </div>
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                narrativeOpen && "rotate-180"
+              )}
+            />
+          </CollapsibleTrigger>
+
+          <CollapsibleContent className="overflow-hidden">
+            <div className="space-y-4 px-1 pb-1 pt-3">
+              <p className="text-sm leading-relaxed text-foreground/90">{policy.screening_decision}</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-600/90 dark:text-emerald-300/90">
+                    Supporting factors
+                  </p>
+                  <BulletList items={policy.reasons_for_validity} variant="support" />
+                </div>
+                <div>
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-rose-600/90 dark:text-rose-300/90">
+                    Blocking factors
+                  </p>
+                  <BulletList items={policy.reasons_against_validity} variant="block" />
+                </div>
+              </div>
+              {policy.minimum_gap_to_eligibility != null && String(policy.minimum_gap_to_eligibility).trim() !== "" ? (
+                <div className="rounded-lg border border-border/40 bg-muted/20 px-3 py-2.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                    Path to eligibility
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-foreground/85">{policy.minimum_gap_to_eligibility}</p>
+                </div>
+              ) : null}
+              {policy.crc_notes && policy.crc_notes.length > 0 ? (
+                <div className="flex gap-2 rounded-lg border border-border/35 bg-card/50 px-3 py-2">
+                  <ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                  <ul className="space-y-1">
+                    {policy.crc_notes.map((n, i) => (
+                      <li key={i} className="text-xs text-muted-foreground leading-relaxed">
+                        {n}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+    </div>
+  )
+}
+
 function PolicyCards({ policies }: { policies: PolicyAssessment[] }) {
   const ordered = useMemo(
     () => [...policies].sort((a, b) => a.policy_name.localeCompare(b.policy_name)),
@@ -142,78 +245,9 @@ function PolicyCards({ policies }: { policies: PolicyAssessment[] }) {
 
   return (
     <div className="space-y-3">
-      {ordered.map((policy, idx) => {
-        const v = normalizeValidity(policy.validity)
-        const vs = validityStyles(v)
-        return (
-          <div
-            key={`${policy.policy_name}-${idx}`}
-            className={cn(
-              "rounded-xl border border-border/45 bg-background/40 p-4 ring-1 backdrop-blur-sm",
-              vs.ring
-            )}
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0 space-y-2">
-                <p className="text-sm font-semibold leading-snug text-foreground">{policy.policy_name}</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <DomainPill domain={policy.domain} />
-                  <ValidityBadge validity={v} />
-                  {policy.hard_lifetime_exclusion ? (
-                    <Badge
-                      variant="outline"
-                      className="border-rose-500/50 text-[10px] uppercase tracking-wide text-rose-200"
-                    >
-                      Lifetime exclusion
-                    </Badge>
-                  ) : null}
-                  {policy.needs_crc_clarification ? (
-                    <span className="inline-flex items-center gap-1 rounded border border-amber-500/35 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-amber-100">
-                      <HelpCircle className="h-3 w-3" />
-                      CRC follow-up
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-            <p className="mt-3 text-sm leading-relaxed text-foreground/90">{policy.screening_decision}</p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-emerald-600/90 dark:text-emerald-300/90">
-                  Supporting factors
-                </p>
-                <BulletList items={policy.reasons_for_validity} variant="support" />
-              </div>
-              <div>
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-rose-600/90 dark:text-rose-300/90">
-                  Blocking factors
-                </p>
-                <BulletList items={policy.reasons_against_validity} variant="block" />
-              </div>
-            </div>
-            {policy.minimum_gap_to_eligibility != null && String(policy.minimum_gap_to_eligibility).trim() !== "" ? (
-              <div className="mt-4 rounded-lg border border-border/40 bg-muted/20 px-3 py-2.5">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                  Path to eligibility
-                </p>
-                <p className="mt-1 text-xs leading-relaxed text-foreground/85">{policy.minimum_gap_to_eligibility}</p>
-              </div>
-            ) : null}
-            {policy.crc_notes && policy.crc_notes.length > 0 ? (
-              <div className="mt-3 flex gap-2 rounded-lg border border-border/35 bg-card/50 px-3 py-2">
-                <ClipboardList className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                <ul className="space-y-1">
-                  {policy.crc_notes.map((n, i) => (
-                    <li key={i} className="text-xs text-muted-foreground leading-relaxed">
-                      {n}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
-        )
-      })}
+      {ordered.map((policy, idx) => (
+        <PolicyCard key={`${policy.policy_name}-${idx}`} policy={policy} />
+      ))}
     </div>
   )
 }
