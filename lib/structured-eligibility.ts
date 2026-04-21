@@ -30,6 +30,17 @@ export type BedrockStructuredEnvelope = {
   unparsed_model_output?: string
 }
 
+function parseJsonIfString(x: unknown): unknown {
+  if (typeof x !== "string") return x
+  const t = x.trim()
+  if (!t) return x
+  try {
+    return JSON.parse(t)
+  } catch {
+    return x
+  }
+}
+
 function isStructuredEligibility(x: unknown): x is StructuredEligibility {
   if (!x || typeof x !== "object") return false
   const o = x as Record<string, unknown>
@@ -38,8 +49,9 @@ function isStructuredEligibility(x: unknown): x is StructuredEligibility {
 
 /** Normalize API response: `structured` may live on the root (proxy) or under `lambdaOutput` (analyze route). */
 export function extractBedrockStructuredEnvelope(data: unknown): BedrockStructuredEnvelope | null {
-  if (!data || typeof data !== "object") return null
-  const d = data as Record<string, unknown>
+  const root = parseJsonIfString(data)
+  if (!root || typeof root !== "object") return null
+  const d = root as Record<string, unknown>
 
   const pick = (src: Record<string, unknown>): BedrockStructuredEnvelope | null => {
     const has =
@@ -47,7 +59,8 @@ export function extractBedrockStructuredEnvelope(data: unknown): BedrockStructur
       typeof src.parse_error === "string" ||
       src.skipSecondaryBedrock === true
     if (!has) return null
-    const structured = isStructuredEligibility(src.structured) ? src.structured : null
+    const candidate = parseJsonIfString(src.structured)
+    const structured = isStructuredEligibility(candidate) ? candidate : null
     return {
       structured,
       parse_error: typeof src.parse_error === "string" ? src.parse_error : undefined,
@@ -59,7 +72,7 @@ export function extractBedrockStructuredEnvelope(data: unknown): BedrockStructur
   const direct = pick(d)
   if (direct) return direct
 
-  const lo = d.lambdaOutput
+  const lo = parseJsonIfString(d.lambdaOutput)
   if (lo && typeof lo === "object") return pick(lo as Record<string, unknown>)
 
   return null
