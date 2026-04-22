@@ -1,17 +1,7 @@
-import { ApiPlayground } from "@/components/api-playground"
+import { redirect } from "next/navigation"
 
 export default function Page() {
-  const defaultEndpoint = process.env.DEFAULT_API_ENDPOINT || ""
-  
-  return (
-    <main className="min-h-screen w-full bg-background flex items-center justify-center py-8 px-4">
-      {/* Background gradient decoration */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
-      </div>
-      
-      <ApiPlayground defaultEndpoint={defaultEndpoint} />
-    </main>
-  )
+  // Canonical entry point is /test.
+  // Keeping / as a redirect avoids duplicating the page.
+  redirect("/test")
 }

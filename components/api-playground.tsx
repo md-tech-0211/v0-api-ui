@@ -1120,218 +1120,238 @@ export function ApiPlayground({ defaultEndpoint = "" }: ApiPlaygroundProps) {
   }
 
   return (
-    <div className="w-full p-4 md:p-8">
-      {/* Glass Card Container */}
-      <div className="relative rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden">
-        {/* Subtle gradient glow effect */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+    <div className="w-full max-w-[1600px] mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 min-h-[calc(100svh-6rem)]">
+        {/* Left 50%: Analyze UI */}
+        <div className="relative rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden min-h-[70svh]">
+          <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
 
-        <div className="relative p-6 md:p-8">
-          {/* Header */}
-          <div className="mb-8 text-center">
-            <div className="inline-flex items-center gap-2 mb-3">
-              <Code2 className="h-8 w-8 text-primary" />
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
-                Lumos Protocols Test
-              </h1>
-            </div>
-          </div>
-
-          {/* Form Section */}
-          <div className="space-y-4 mb-6">
-            {/* Endpoint is hidden; uses DEFAULT_API_ENDPOINT from env via app/page.tsx */}
-
-            {/* Payload Input */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <label className="text-sm font-medium text-foreground">
-                  AI Analysis
-                </label>
-                <div className="flex items-center gap-2">
-                  <Select value={activePayloadTabId} onValueChange={setActivePayloadTabId}>
-                    <SelectTrigger className="h-8 w-[180px] rounded-lg border-border/50" aria-label="Select patient">
-                      <SelectValue placeholder="Select patient" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {payloadTabs.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>
-                          {t.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {(() => {
-                const t = payloadTabs.find((p) => p.id === activePayloadTabId)
-                if (!t) return null
-                return (
-                  <textarea
-                    value={t.body}
-                    onChange={(e) => updatePayloadTabBody(t.id, e.target.value)}
-                    placeholder={'Enter your prompt or payload...\n\nExample:\n{\n  "input": "Hello, API!"\n}'}
-                    rows={5}
-                    className={cn(
-                      "w-full px-4 py-3 rounded-xl resize-y min-h-[120px]",
-                      "bg-input border border-border/50",
-                      "text-foreground placeholder:text-muted-foreground",
-                      "focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary/50",
-                      "transition-all duration-200 font-mono text-sm leading-relaxed"
-                    )}
-                  />
-                )
-              })()}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Button
-                onClick={analyzeSelectedPatient}
-                disabled={isLoading}
-                className={cn(
-                  "flex-1 py-6 rounded-xl font-semibold text-base",
-                  "bg-primary hover:bg-primary/90 text-primary-foreground",
-                  "transition-all duration-200",
-                  "disabled:opacity-50 disabled:cursor-not-allowed",
-                  "relative overflow-hidden group"
-                )}
-              >
-                {/* Ripple effect on hover */}
-                <span className="absolute inset-0 bg-foreground/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <span className="relative flex items-center justify-center gap-2">
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner size="sm" className="border-primary-foreground/30 border-t-primary-foreground" />
-                      <span>Analyzing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-5 w-5" />
-                      <span>Analyze</span>
-                    </>
-                  )}
-                </span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Error Display */}
-          {activeError && (
-            <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/30 animate-in fade-in-0 slide-in-from-top-2 duration-300">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-semibold text-destructive capitalize">
-                    {activeError.type} Error
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {activeError.message}
-                  </p>
+          <div className="relative flex h-full min-h-[calc(100svh-6rem)] flex-col">
+            <div className="px-6 pt-6 md:px-8 md:pt-8 pb-4 border-b border-border/40">
+              <div className="text-center">
+                <div className="inline-flex items-center gap-2">
+                  <Code2 className="h-8 w-8 text-primary" />
+                  <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight">
+                    Lumos Protocols Test
+                  </h1>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Response Section */}
-          {activeResponse && (
-            <div className="animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
-              {/* Response Header */}
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 text-success" />
-                  <span className="font-semibold text-foreground">Response</span>
+            <div className="flex-1 overflow-hidden p-6 md:p-8">
+              <div className="h-full min-h-0 flex flex-col gap-4">
+                <div className="flex-1 min-h-0 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="text-sm font-medium text-foreground">AI Analysis</label>
+                    <div className="flex items-center gap-2">
+                      <Select value={activePayloadTabId} onValueChange={setActivePayloadTabId}>
+                        <SelectTrigger className="h-8 w-[200px] rounded-lg border-border/50" aria-label="Select patient">
+                          <SelectValue placeholder="Select patient" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {payloadTabs.map((t) => (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {(() => {
+                    const t = payloadTabs.find((p) => p.id === activePayloadTabId)
+                    if (!t) return null
+                    return (
+                      <textarea
+                        value={t.body}
+                        onChange={(e) => updatePayloadTabBody(t.id, e.target.value)}
+                        placeholder={'Enter your prompt or payload...\n\nExample:\n{\n  "input": "Hello, API!"\n}'}
+                        className={cn(
+                          "w-full flex-1 min-h-0 px-4 py-3 rounded-xl resize-none",
+                          "bg-input border border-border/50",
+                          "text-foreground placeholder:text-muted-foreground",
+                          "focus:outline-none focus:ring-2 focus:ring-ring/20 focus:border-primary/50",
+                          "transition-all duration-200 font-mono text-sm leading-relaxed"
+                        )}
+                      />
+                    )
+                  })()}
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {/* Copy Button */}
-                  <button
-                    type="button"
-                    onClick={copyToClipboard}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={analyzeSelectedPatient}
+                    disabled={isLoading}
                     className={cn(
-                      "p-2 rounded-lg",
-                      "border border-border/50 hover:bg-accent/50",
-                      "transition-all duration-200"
+                      "flex-1 py-6 rounded-xl font-semibold text-base",
+                      "bg-primary hover:bg-primary/90 text-primary-foreground",
+                      "transition-all duration-200",
+                      "disabled:opacity-50 disabled:cursor-not-allowed",
+                      "relative overflow-hidden group"
                     )}
-                    aria-label="Copy response"
                   >
-                    {copied ? (
-                      <Check className="h-4 w-4 text-success" />
-                    ) : (
-                      <Copy className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </button>
+                    <span className="absolute inset-0 bg-foreground/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="relative flex items-center justify-center gap-2">
+                      {isLoading ? (
+                        <>
+                          <LoadingSpinner
+                            size="sm"
+                            className="border-primary-foreground/30 border-t-primary-foreground"
+                          />
+                          <span>Analyzing...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-5 w-5" />
+                          <span>Analyze</span>
+                        </>
+                      )}
+                    </span>
+                  </Button>
                 </div>
-              </div>
 
-              {/* Response Body */}
-              <div
-                className={cn(
-                  "rounded-xl border border-border/50 overflow-auto",
-                  isProtocolResponse(activeResponse.data) ||
-                    narrativeFromAnalysis ||
-                    structuredEnvelope
-                    ? "bg-transparent p-0 max-h-[min(720px,80vh)]"
-                    : "bg-input/50 p-4 max-h-[400px]"
-                )}
-              >
-                {structuredEnvelope ? (
-                  <div className="p-2 sm:p-3">
-                    <StructuredEligibilityDashboard
-                      envelope={structuredEnvelope}
-                      patientLabel={analyzePatientLabel}
-                    />
+                {activeError && (
+                  <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 animate-in fade-in-0 slide-in-from-top-2 duration-300">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-destructive capitalize">{activeError.type} Error</p>
+                        <p className="text-sm text-muted-foreground mt-1">{activeError.message}</p>
+                      </div>
+                    </div>
                   </div>
-                ) : narrativeFromAnalysis ? (
-                  <div className="p-1 sm:p-2">
-                    <EligibilityNarrativeView patient={narrativeFromAnalysis.patient} rows={narrativeFromAnalysis.rows} />
-                  </div>
-                ) : typeof activeResponse.data === "object" &&
-                  activeResponse.data !== null &&
-                  "analysis" in (activeResponse.data as Record<string, unknown>) &&
-                  typeof (activeResponse.data as any).analysis?.text === "string" ? (
-                  <div className="text-sm text-foreground leading-relaxed">
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        p: (props) => <p className="mb-3 last:mb-0" {...props} />,
-                        strong: (props) => <strong className="font-semibold" {...props} />,
-                        em: (props) => <em className="italic" {...props} />,
-                        ul: (props) => <ul className="list-disc pl-5 mb-3 last:mb-0" {...props} />,
-                        ol: (props) => <ol className="list-decimal pl-5 mb-3 last:mb-0" {...props} />,
-                        li: (props) => <li className="mb-1" {...props} />,
-                        code: ({ className, children, ...props }) =>
-                          props.node?.position?.start.line === props.node?.position?.end.line ? (
-                            <code className={cn("px-1 py-0.5 rounded bg-foreground/10", className)} {...props}>
-                              {children}
-                            </code>
-                          ) : (
-                            <pre className="font-mono text-sm whitespace-pre-wrap p-3 rounded-lg bg-foreground/5 overflow-auto">
-                              <code className={className} {...props}>
-                                {children}
-                              </code>
-                            </pre>
-                          ),
-                      }}
-                    >
-                      {(activeResponse.data as any).analysis.text}
-                    </ReactMarkdown>
-                  </div>
-                ) : isProtocolResponse(activeResponse.data) ? (
-                  <ProtocolList protocols={activeResponse.data.protocols_evaluated} />
-                ) : (
-                  <JsonViewer data={activeResponse.data} />
                 )}
               </div>
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* Right 50%: Full-height Results */}
+        <div className="relative rounded-2xl border border-border/50 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden min-h-[70svh]">
+          <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+
+          <div className="relative flex h-full min-h-[calc(100svh-6rem)] flex-col">
+            <div className="px-6 pt-6 md:px-8 md:pt-8 pb-4 border-b border-border/40">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  {activeResponse ? (
+                    <CheckCircle2 className="h-5 w-5 text-success" />
+                  ) : (
+                    <Code2 className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <span className="text-lg font-semibold text-foreground">Results</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={copyToClipboard}
+                  disabled={!activeResponse}
+                  className={cn(
+                    "p-2 rounded-lg",
+                    "border border-border/50 hover:bg-accent/50",
+                    "transition-all duration-200",
+                    (!activeResponse || copied) && "disabled:opacity-50 disabled:cursor-not-allowed"
+                  )}
+                  aria-label="Copy results"
+                  title={activeResponse ? "Copy results" : "Run Analyze first"}
+                >
+                  {copied ? (
+                    <Check className="h-4 w-4 text-success" />
+                  ) : (
+                    <Copy className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-hidden p-6 md:p-8">
+              <div className="h-full overflow-auto pr-1">
+                {activeError ? (
+                  <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-destructive capitalize">{activeError.type} Error</p>
+                        <p className="text-sm text-muted-foreground mt-1">{activeError.message}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : isLoading && !activeResponse ? (
+                  <div className="h-full min-h-[200px] flex items-center justify-center">
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <LoadingSpinner size="sm" />
+                      <span className="text-sm">Analyzing…</span>
+                    </div>
+                  </div>
+                ) : !activeResponse ? (
+                  <div className="h-full min-h-[200px] flex items-center justify-center">
+                    <div className="text-center text-sm text-muted-foreground max-w-md">
+                      Run <span className="font-medium text-foreground">Analyze</span> to render structured results here.
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={cn(
+                      "rounded-xl border border-border/50 overflow-hidden",
+                      isProtocolResponse(activeResponse.data) || narrativeFromAnalysis || structuredEnvelope
+                        ? "bg-transparent p-0"
+                        : "bg-input/50"
+                    )}
+                  >
+                    {structuredEnvelope ? (
+                      <div className="p-2 sm:p-3">
+                        <StructuredEligibilityDashboard envelope={structuredEnvelope} patientLabel={analyzePatientLabel} />
+                      </div>
+                    ) : narrativeFromAnalysis ? (
+                      <div className="p-1 sm:p-2">
+                        <EligibilityNarrativeView patient={narrativeFromAnalysis.patient} rows={narrativeFromAnalysis.rows} />
+                      </div>
+                    ) : typeof activeResponse.data === "object" &&
+                      activeResponse.data !== null &&
+                      "analysis" in (activeResponse.data as Record<string, unknown>) &&
+                      typeof (activeResponse.data as any).analysis?.text === "string" ? (
+                      <div className="p-4 text-sm text-foreground leading-relaxed">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: (props) => <p className="mb-3 last:mb-0" {...props} />,
+                            strong: (props) => <strong className="font-semibold" {...props} />,
+                            em: (props) => <em className="italic" {...props} />,
+                            ul: (props) => <ul className="list-disc pl-5 mb-3 last:mb-0" {...props} />,
+                            ol: (props) => <ol className="list-decimal pl-5 mb-3 last:mb-0" {...props} />,
+                            li: (props) => <li className="mb-1" {...props} />,
+                            code: ({ className, children, ...props }) =>
+                              props.node?.position?.start.line === props.node?.position?.end.line ? (
+                                <code className={cn("px-1 py-0.5 rounded bg-foreground/10", className)} {...props}>
+                                  {children}
+                                </code>
+                              ) : (
+                                <pre className="font-mono text-sm whitespace-pre-wrap p-3 rounded-lg bg-foreground/5 overflow-auto">
+                                  <code className={className} {...props}>
+                                    {children}
+                                  </code>
+                                </pre>
+                              ),
+                          }}
+                        >
+                          {(activeResponse.data as any).analysis.text}
+                        </ReactMarkdown>
+                      </div>
+                    ) : isProtocolResponse(activeResponse.data) ? (
+                      <ProtocolList protocols={activeResponse.data.protocols_evaluated} />
+                    ) : (
+                      <div className="p-4">
+                        <JsonViewer data={activeResponse.data} />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <p className="text-center text-sm text-muted-foreground mt-6">
-        Built with React + Tailwind CSS
-      </p>
     </div>
   )
 }
